@@ -1,11 +1,13 @@
-module.exports = function (io) {
-    let  users = {
+const Chat = require('./models/Chat');
 
-    };
-    io.on('connection', socket => {
+module.exports = io => {
+    let  users = {};
+    io.on('connection', async socket => {
         console.log('new user connected');
-        socket.on('new user', (data,cb) =>{
-            console.log(data);
+
+        let messages = await Chat.find({}).limit(8).sort('-created');
+        socket.emit('load old messages', messages);
+        socket.on('new user', (data,cb) => {
             if(data in users){
                 cb(false);
             }else{
@@ -15,16 +17,17 @@ module.exports = function (io) {
                 updateNicknames();
             }
         });
-        socket.on('sent message', (data, cb) => {
+        //send a msg broadcasting
+        socket.on('sent message', async (data, cb) => {
 
-            var msg = data.trim();
+            let msg = data.trim();
 
             if(msg.substr(0, 3) === '/w '){
                 msg = msg.substr(3);
-                const index = msg.indexOf(' ');
+                let index = msg.indexOf(' ');
                 if(index !== -1){
-                    var name = msg.substring(0, index);
-                    var msg = msg.substring(index + 1);
+                    let name = msg.substring(0, index);
+                    let msg = msg.substring(index + 1);
                     if(name in users){
                         users[name].emit('whisper', {
                             msg,
@@ -37,10 +40,18 @@ module.exports = function (io) {
                     cb('Error Please enter your message');
                 }
             }else {
+                let newM = new Chat({
+                    msg,
+                    nick: socket.nickname
+                });
+                await newM.save();
+
                 io.sockets.emit('new message', {
                     msg: data,
                     nick: socket.nickname
+
                 });
+                console.log('menssage save');
             }
         });
         socket.on('disconnect', data => {
@@ -48,7 +59,7 @@ module.exports = function (io) {
            delete users[socket.nickname];
            updateNicknames();
         });
-        function updateNicknames() {
+        const updateNicknames = () =>{
             io.sockets.emit('usernames', Object.keys(users));
         }
     });

@@ -1,15 +1,16 @@
 $(function () {
-    const socket = io();
-    // obtaining Dom
+    //connect socket client
+    const socket = io().connect();
+    // obtaining Dom from Chat-element
     const $messageForm = $('#message-form');
     const $messageBox = $('#message');
     const $chat = $('#chat');
-    // nickname form
+    // obtaining Dom form nickname
     const $nickForm = $('#nickForm');
     const $nickError = $('#nickError');
     const $nickname = $('#nickname');
 
-    const $users = $('#username');
+    const $users = $('#usernames');
 
     $nickForm.submit(e => {
         e.preventDefault();
@@ -18,9 +19,7 @@ $(function () {
                 $('#nickWrap').hide();
                 $('#contentWrap').show();
             }else {
-                $nickError.html(`
-                    <div class="alert alert-danger">that user already exist<div/>
-                `);
+                $nickError.html(`<div class="alert alert-danger">that user already exist<div/>`);
 
             }
             $nickname.val(' ');
@@ -36,8 +35,8 @@ $(function () {
 
         $messageBox.val(' ');
     });
-    socket.on('new message', function (data) {
-        $chat.append('<b>'+ data.nick + '</b> ' + data.msg + '<br/>');
+    socket.on('new message', data => {
+        displayMsg(data);
     });
     socket.on('usernames', data => {
         let html = '';
@@ -47,6 +46,15 @@ $(function () {
         $users.html(html);
     });
     socket.on('whisper', data => {
+        $chat.append(`<p class="whisper"><b>${data.nick}</b>: ${data.msg}</p>`);
+    });
+    socket.on('load old messages', msg => {
+        for(let i = msg.length -1; i >= 0; i--){
+            displayMsg(msg[i]);
+        }
+    });
+    const displayMsg = (data) => {
         $chat.append(`<p class="whisper"><b>${data.nick}:</b> ${data.msg}</p>`);
-    })
+
+    };
 });
