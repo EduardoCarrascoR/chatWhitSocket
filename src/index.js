@@ -1,5 +1,5 @@
 const express = require('express');
-const socket = require('sockets');
+const socket = require('socket.io');
 const path = require('path');
 const http = require('http');
 const mongo = require('mongoose');
@@ -10,7 +10,7 @@ const io = socket.listen(server);
 
 
 //db connect
-mongo.connect('mongodb://localhost:27017/chatdb', {useNewUrlParser: true}).then(db => console.log('db is connected'))
+mongo.connect('mongodb://localhost/chatdb', {useNewUrlParser: true}).then(db => console.log('db is connected'))
     .catch(err => console.log(err));
 //static files
 app.use(express.static(path.join(__dirname, 'public')));
